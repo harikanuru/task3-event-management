@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 // use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
+use Illuminate\Http\Response;
 
 class ExampleTest extends TestCase
 {
@@ -25,6 +26,18 @@ class ExampleTest extends TestCase
 
     public function test_create_a_task()
     {
+
+        $userLogin = [
+            'email' => 'mayert.ruben@example.org',
+            'password' => 'password23'
+        ];
+
+        $token = $this->withHeaders([
+            'Accept' => "application/json",
+        ])->post('api/login', $userLogin);
+       // dd($token);
+
+
         $eventData = [
             'name' => 'New Task',
             'start_time' => '2023-07-01 15:00:00',
@@ -32,17 +45,61 @@ class ExampleTest extends TestCase
         ];
 
         $response = $this->withHeaders([
-            'Accept' => "application/json",
+            'HTTP_AUTHORIZATION' => 'Bearer '.$token['token'],
         ])->post('api/events', $eventData);
 
 
-        $response->assertStatus(Response::HTTP_FOUND); // 302 Found
-        unset($taskData['id']);
+        $response->assertStatus(201); 
 
-        //  $this->assertDatabaseHas('tasks', $taskData);
+    }
+
+    public function test_create_a_taskWithoutToken()
+    {
+
+        $userLogin = [
+            'email' => 'mayert.ruben@example.org',
+            'password' => 'password23'
+        ];
+        $eventData = [
+            'name' => 'New Task',
+            'start_time' => '2023-07-01 15:00:00',
+            'end_time' => '2023-07-01 16:00:00'
+        ];
+
+        $response = $this->withHeaders([
+            'HTTP_AUTHORIZATION' => 'Bearer ',
+            'Accept' => "application/json"
+        ])->post('api/events', $eventData);
+        $response->assertStatus(401); 
+
+    }
+
+    public function test_create_a_task_update()
+    {
+
+        $userLogin = [
+            'email' => 'kveum@example.org',
+            'password' => 'password23'
+        ];
+
+        $token = $this->withHeaders([
+            'Accept' => "application/json",
+        ])->post('api/login', $userLogin);
+        print_r($token['token']);
 
 
-        $this->withoutMiddleware();
-        $this->post(route('tasks.store'), $taskData);
+        $eventData = [
+            'name' => 'New Task',
+            'start_time' => '2023-07-01 15:00:00',
+            'end_time' => '2023-07-01 16:00:00'
+        ];
+
+        $response = $this->withHeaders([
+            'HTTP_AUTHORIZATION' => 'Bearer '.$token['token'],
+        ])->get('api/events/2', $eventData);
+
+
+        $response->assertStatus(201); 
+
     }
 }
